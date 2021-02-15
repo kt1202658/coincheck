@@ -17,7 +17,7 @@ class Order(object):
         self.secret_key = secret_key
 
 
-    def create(self,rate, amount, order_type, pair):
+    def createA(self,rate, amount, order_type, pair):
         ''' create new order function
         :param rate: float
         :param amount: float
@@ -42,11 +42,67 @@ class Order(object):
         r = requests.post(url,headers=headers,data=body)
         return json.loads(r.text)
     
+    
+    def createB(self,amount, order_type):
+        ''' create new order function
+        :param rate: float
+        :param amount: float
+        :param order_type: str; set 'market_buy'
+        :param pair: str; set 'btc_jpy' 
+        '''
+        nonce = nounce()
+        payload = { 'market_buy_amount': amount,
+                    'order_type': order_type,
+                    'pair': pair
+                    }
+        url= 'https://coincheck.com/api/exchange/orders'
+        body = 'market_buy_amount={amount}&order_type={order_type}&pair={pair}'.format(**payload)
+        message = nonce + url + body
+        signature = hmac.new(self.secret_key.encode('utf-8'), message.encode('utf-8'), hashlib.sha256).hexdigest()
+        headers = {
+           'ACCESS-KEY'      : self.access_key,
+           'ACCESS-NONCE'    : nonce,
+           'ACCESS-SIGNATURE': signature
+        }
+        r = requests.post(url,headers=headers,data=body)
+        return json.loads(r.text)
+    
+    def createC(self,amount, order_type):
+        ''' create new order function
+        :param rate: float
+        :param amount: float
+        :param order_type: str; set 'market_sell'
+        :param pair: str; set 'btc_jpy' 
+        '''
+        nonce = nounce()
+        payload = { 'amount': amount,
+                    'order_type': order_type,
+                    'pair': pair
+                    }
+        url= 'https://coincheck.com/api/exchange/orders'
+        body = 'amount={amount}&order_type={order_type}&pair={pair}'.format(**payload)
+        message = nonce + url + body
+        signature = hmac.new(self.secret_key.encode('utf-8'), message.encode('utf-8'), hashlib.sha256).hexdigest()
+        headers = {
+           'ACCESS-KEY'      : self.access_key,
+           'ACCESS-NONCE'    : nonce,
+           'ACCESS-SIGNATURE': signature
+        }
+        r = requests.post(url,headers=headers,data=body)
+        return json.loads(r.text)
+    
+    
     def buy_btc_jpy(self, **kwargs):
-        return self.create(order_type='buy', pair='btc_jpy',**kwargs) 
+        return self.createA(order_type='buy', pair='btc_jpy',**kwargs) 
     
     def sell_btc_jpy(self, **kwargs):
-        return self.create(order_type='sell', pair='btc_jpy',**kwargs) 
+        return self.createA(order_type='sell', pair='btc_jpy',**kwargs) 
+    
+    def market_buy_btc_jpy(self, **kwargs):
+        return self.createB(order_type='market_buy', pair='btc_jpy',**kwargs) 
+    
+    def market_sell_btc_jpy(self, **kwargs):
+        return self.createC(order_type='market_sell', pair='btc_jpy',**kwargs) 
     
     def list(self):
         ''' list all open orders func
